@@ -177,7 +177,10 @@ export default function DashboardScreen({ onScanStation }) {
                             <div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-neon-red z-30" />
                             <div className="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-neon-red z-30" />
 
-                            <Scanner onScan={handleScan} />
+                            <Scanner 
+                                onScan={handleScan} 
+                                constraints={{ facingMode: 'environment' }}
+                            />
                         </div>
 
                         {scanError && (
