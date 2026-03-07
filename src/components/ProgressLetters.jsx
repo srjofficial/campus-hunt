@@ -1,14 +1,15 @@
-import { STATION_DATA } from '../data';
+import { useStations } from '../hooks/useStations';
 import { useGameState } from '../hooks/useGameState';
 
 export default function ProgressLetters() {
+    const { stations } = useStations();
     const { getCollected, getCompleted } = useGameState();
     const collected = getCollected();
     const completed = getCompleted();
 
     return (
         <div className="progress-letters">
-            {STATION_DATA.map(s => {
+            {stations.map(s => {
                 const letter = collected[s.id];
                 let cls = 'prog-letter';
                 let label = String(s.id);

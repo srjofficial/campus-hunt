@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { STATION_DATA } from '../data';
+import { useStations } from '../hooks/useStations';
 import { useGameState } from '../hooks/useGameState';
 
 function spawnConfetti(wrap) {
@@ -21,6 +21,7 @@ function spawnConfetti(wrap) {
 }
 
 export default function FinalScreen() {
+    const { stations } = useStations();
     const { getCollected } = useGameState();
     const collected = getCollected();
 
@@ -31,7 +32,7 @@ export default function FinalScreen() {
     }, []);
 
     let word = '';
-    const letters = STATION_DATA.map(s => {
+    const letters = stations.map(s => {
         const letter = collected[s.id];
         if (letter) { word += letter; return { letter, got: true }; }
         else { word += '_'; return { letter: '?', got: false }; }

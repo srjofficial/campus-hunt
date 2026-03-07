@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { STATION_DATA } from './data';
 import { useGameState } from './hooks/useGameState';
+import { useStations } from './hooks/useStations';
 import { supabase } from './lib/supabase';
 import EtherealShadow from './components/EtherealShadow';
 import LoginScreen from './screens/LoginScreen';
@@ -33,6 +33,7 @@ const SCREENS = {
 };
 
 export default function App() {
+  const { stations, loading } = useStations();
   const [searchParams] = useSearchParams();
   
   let stationId = NaN;
@@ -59,7 +60,7 @@ export default function App() {
   const { getCompleted, collectLetter, markCompleted, getUsername } = useGameState();
 
   const currentStation = hasStation
-    ? STATION_DATA.find(s => s.id === stationId) || null
+    ? stations.find(s => s.id === stationId) || null
     : null;
 
   // After login succeeds → go to loading
@@ -93,7 +94,7 @@ export default function App() {
           // Restore progress into memory
           allAnswers.forEach(ans => {
             markCompleted(ans.station_id);
-            const s = STATION_DATA.find(st => st.id === ans.station_id);
+            const s = stations.find(st => st.id === ans.station_id);
             if (s) collectLetter(s.id, s.secretLetter);
           });
 
@@ -133,13 +134,13 @@ export default function App() {
     collectLetter(s.id, s.secretLetter);
     const completed = markCompleted(s.id);
     setStation(s);
-    if (completed.length >= STATION_DATA.length) setScreen(SCREENS.FINAL);
+    if (completed.length >= stations.length) setScreen(SCREENS.FINAL);
     else setScreen(SCREENS.TASK_DONE);
   };
 
   const handleCorrectNext = () => {
     const completed = markCompleted(station.id);
-    if (completed.length >= STATION_DATA.length) setScreen(SCREENS.FINAL);
+    if (completed.length >= stations.length) setScreen(SCREENS.FINAL);
     else {
       window.history.pushState(null, '', window.location.pathname);
       setScreen(SCREENS.DASHBOARD);
@@ -148,7 +149,7 @@ export default function App() {
 
   const handleTaskDoneNext = () => {
     const completed = getCompleted();
-    if (completed.length >= STATION_DATA.length) setScreen(SCREENS.FINAL);
+    if (completed.length >= stations.length) setScreen(SCREENS.FINAL);
     else {
       window.history.pushState(null, '', window.location.pathname);
       setScreen(SCREENS.DASHBOARD);
@@ -163,6 +164,10 @@ export default function App() {
     // Reload so App state grabs the station
     window.location.reload();
   };
+
+  if (loading) {
+    return <EtherealShadow color="rgba(139, 0, 0, 0.8)" sizing="fill" style={{ width: '100%', height: '100%' }} />;
+  }
 
   const getShadowColor = () => {
     switch (screen) {

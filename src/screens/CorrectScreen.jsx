@@ -1,8 +1,9 @@
-import { STATION_DATA } from '../data';
+import { useStations } from '../hooks/useStations';
 import ProgressLetters from '../components/ProgressLetters';
 
 export default function CorrectScreen({ station, isRevisit, onNext }) {
-    const isLast = station.id === STATION_DATA.length;
+    const { stations } = useStations();
+    const isLast = station.id === stations.length;
 
     return (
         <div className="w-full min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden bg-background">
@@ -48,7 +49,7 @@ export default function CorrectScreen({ station, isRevisit, onNext }) {
                     </div>
                     
                     <div className="text-[10px] font-body text-white/40 uppercase tracking-widest">
-                        Collect {STATION_DATA.length} fragments to unlock the core
+                        Collect {stations.length} fragments to unlock the core
                     </div>
                 </div>
 

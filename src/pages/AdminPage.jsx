@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
 import { supabase } from '../lib/supabase';
-import { STATION_DATA } from '../data';
+import { useStations } from '../hooks/useStations';
 import GlowCard from '../components/GlowCard';
 import GlassButton from '../components/GlassButton';
 import './admin.css';
@@ -23,11 +23,17 @@ export default function AdminPage() {
     const [answerStatus, setAnswerStatus] = useState('⏳ Loading answers...');
 
     // Credentials state
+    const { stations, refreshStations } = useStations();
     const [creds, setCreds] = useState([]);
     const [credStatus, setCredStatus] = useState('');
     const [newUser, setNewUser] = useState('');
     const [newPass, setNewPass] = useState('');
     const [addMsg, setAddMsg] = useState('');
+
+    // Editor state
+    const [editingStationId, setEditingStationId] = useState(null);
+    const [editForm, setEditForm] = useState(null);
+    const [saveStatus, setSaveStatus] = useState('');
 
     useEffect(() => {
         const auto = window.location.href.split('abpasa')[0];
@@ -58,7 +64,7 @@ export default function AdminPage() {
     /* ---- QR Generation ---- */
     const generateAllQRs = async () => {
         const base = getBase();
-        const cards = STATION_DATA.map(station => ({
+        const cards = stations.map(station => ({
             station, url: base + '?station=' + btoa(station.id.toString())
         }));
         setQrCards(cards);
@@ -184,6 +190,45 @@ export default function AdminPage() {
             loadLogins(); // refresh activity table too
             loadAnswers(); // refresh answer table too
         } catch (err) { alert('Delete failed: ' + err.message); }
+    };
+
+    /* ---- Editor ---- */
+    const startEditing = (station) => {
+        setEditingStationId(station.id);
+        setEditForm(JSON.parse(JSON.stringify(station))); // deep copy
+        setSaveStatus('');
+    };
+
+    const cancelEditing = () => {
+        setEditingStationId(null);
+        setEditForm(null);
+        setSaveStatus('');
+    };
+
+    const saveStation = async () => {
+        setSaveStatus('⏳ Saving...');
+        try {
+            const { error } = await supabase
+                .from('hunt_stations')
+                .update({
+                    name: editForm.name,
+                    question: editForm.question,
+                    options: editForm.options,
+                    correct_index: editForm.correctIndex,
+                    secret_letter: editForm.secretLetter,
+                    next_clue: editForm.nextClue,
+                    fun_task: editForm.funTask
+                })
+                .eq('id', editForm.id);
+            
+            if (error) throw error;
+            setSaveStatus('✅ Saved successfully!');
+            await refreshStations();
+            setTimeout(() => setSaveStatus(''), 3000);
+            setEditingStationId(null);
+        } catch (e) {
+            setSaveStatus('❌ Error: ' + e.message);
+        }
     };
 
     /* ---- Render ---- */
@@ -319,26 +364,120 @@ export default function AdminPage() {
                 ))}
             </div>
 
-            {/* ===== STATION SUMMARY ===== */}
-            <p className="section-title">Station Summary Table</p>
-            <table className="summary-table">
-                <thead>
-                    <tr>
-                        <th>#</th><th>Station</th><th>Secret Letter</th><th>Question</th><th>Fun Task (if wrong)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {STATION_DATA.map(s => (
-                        <tr key={s.id}>
-                            <td>{s.id}</td>
-                            <td><b>{s.name}</b></td>
-                            <td><span className="tbl-letter">{s.secretLetter}</span></td>
-                            <td>{s.question}</td>
-                            <td className="tbl-wrong">{s.funTask}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            {/* ===== STATION EDITOR ===== */}
+            <p className="section-title">🛠️ Station Editor</p>
+            <GlowCard glowColor="cyan" className="!w-full mb-10 h-auto">
+                <div style={{ padding: '30px' }}>
+                    <p style={{ color: 'var(--text2)', fontSize: '14px', marginBottom: '20px' }}>
+                        Modify the questions, clues, and tasks directly in the database. Changes apply instantly for all active players.
+                    </p>
+                    {saveStatus && <div style={{ marginBottom: '16px', padding: '10px', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--primary)', color: 'white', borderRadius: '4px' }}>{saveStatus}</div>}
+                    
+                    <table className="summary-table">
+                        <thead>
+                            <tr>
+                                <th>#</th><th>Station</th><th>Secret Letter</th><th>Question</th><th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {stations.map(s => (
+                                <tr key={s.id}>
+                                    <td>{s.id}</td>
+                                    <td><b>{s.name}</b></td>
+                                    <td><span className="tbl-letter">{s.secretLetter}</span></td>
+                                    <td>
+                                        <div style={{ maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {s.question}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <GlassButton size="sm" variant="blue" onClick={() => startEditing(s)}>✏️ Edit</GlassButton>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+                    {/* Editor Form Modal / Inline */}
+                    {editingStationId && editForm && (
+                        <div style={{ marginTop: '30px', padding: '24px', background: 'rgba(0,0,0,0.8)', border: '1px solid var(--primary)', borderRadius: '8px' }}>
+                            <h3 style={{ color: 'white', marginBottom: '16px', fontFamily: 'Orbitron, sans-serif' }}>Editing Station {editForm.id}</h3>
+                            
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                                <div>
+                                    <label style={{ display: 'block', color: 'var(--text2)', fontSize: '12px', marginBottom: '4px' }}>Station Name</label>
+                                    <input className="cred-input" style={{ width: '100%' }} value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', color: 'var(--text2)', fontSize: '12px', marginBottom: '4px' }}>Secret Letter</label>
+                                    <input className="cred-input" style={{ width: '100%' }} value={editForm.secretLetter} maxLength={1} onChange={e => setEditForm({...editForm, secretLetter: e.target.value.toUpperCase()})} />
+                                </div>
+                            </div>
+                            
+                            <div style={{ marginBottom: '16px' }}>
+                                <label style={{ display: 'block', color: 'var(--text2)', fontSize: '12px', marginBottom: '4px' }}>Question Prompt</label>
+                                <textarea className="cred-input" style={{ width: '100%', minHeight: '80px', resize: 'vertical' }} value={editForm.question} onChange={e => setEditForm({...editForm, question: e.target.value})} />
+                            </div>
+
+                            <div style={{ marginBottom: '16px', padding: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px' }}>
+                                <label style={{ display: 'block', color: 'white', marginBottom: '12px', fontWeight: 'bold' }}>Multiple Choice Options & Answer</label>
+                                {editForm.options.map((opt, i) => (
+                                    <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '10px' }}>
+                                        <div 
+                                            onClick={() => setEditForm({...editForm, correctIndex: i})}
+                                            style={{ 
+                                                width: '20px', 
+                                                height: '20px', 
+                                                borderRadius: '50%', 
+                                                border: `2px solid ${editForm.correctIndex === i ? 'var(--green)' : 'rgba(255,255,255,0.3)'}`,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                cursor: 'pointer',
+                                                flexShrink: 0
+                                            }}
+                                            title="Mark as correct answer"
+                                        >
+                                            {editForm.correctIndex === i && (
+                                                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--green)' }} />
+                                            )}
+                                        </div>
+                                        <span style={{ color: editForm.correctIndex === i ? 'var(--green)' : 'var(--text3)', width: '20px', fontWeight: 'bold' }}>
+                                            {['A','B','C','D'][i]}.
+                                        </span>
+                                        <input 
+                                            className="cred-input" 
+                                            style={{ flex: 1, width: '100%', borderColor: editForm.correctIndex === i ? 'var(--green)' : 'rgba(255,255,255,0.2)' }}
+                                            value={opt}  
+                                            onChange={e => {
+                                                const newOpts = [...editForm.options];
+                                                newOpts[i] = e.target.value;
+                                                setEditForm({...editForm, options: newOpts});
+                                            }} 
+                                        />
+                                    </div>
+                                ))}
+                                <p style={{ color: 'var(--text3)', fontSize: '11px', marginTop: '8px' }}>* Select the radio button next to the correctly spelled answer.</p>
+                            </div>
+
+                            <div style={{ marginBottom: '16px' }}>
+                                <label style={{ display: 'block', color: 'var(--text2)', fontSize: '12px', marginBottom: '4px' }}>Next Coordinate Clue (Shown when correct)</label>
+                                <textarea className="cred-input" style={{ width: '100%', minHeight: '60px', resize: 'vertical' }} value={editForm.nextClue} onChange={e => setEditForm({...editForm, nextClue: e.target.value})} />
+                            </div>
+
+                            <div style={{ marginBottom: '24px' }}>
+                                <label style={{ display: 'block', color: 'var(--text2)', fontSize: '12px', marginBottom: '4px' }}>Fun Task (Penalty for wrong answer)</label>
+                                <textarea className="cred-input" style={{ width: '100%', minHeight: '60px', resize: 'vertical' }} value={editForm.funTask} onChange={e => setEditForm({...editForm, funTask: e.target.value})} />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                                <GlassButton size="default" variant="red" onClick={cancelEditing}>Cancel</GlassButton>
+                                <GlassButton size="default" variant="green" onClick={saveStation}>💾 Save Changes immediately</GlassButton>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </GlowCard>
 
             {/* ===== PLAYER ACTIVITY ===== */}
             <p className="section-title">📊 Player Login Activity</p>
@@ -375,7 +514,7 @@ export default function AdminPage() {
                                                 fontSize: '12px',
                                                 fontWeight: 700
                                             }}>
-                                                Station {l.station_id}{STATION_DATA.find(s => s.id === l.station_id) ? ` — ${STATION_DATA.find(s => s.id === l.station_id).name}` : ''}
+                                                Station {l.station_id}{stations.find(s => s.id === l.station_id) ? ` — ${stations.find(s => s.id === l.station_id).name}` : ''}
                                             </span>
                                         </td>
                                         <td style={{ color: 'var(--text2)', fontSize: '13px' }}>

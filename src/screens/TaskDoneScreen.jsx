@@ -1,7 +1,8 @@
-import { STATION_DATA } from '../data';
+import { useStations } from '../hooks/useStations';
 
 export default function TaskDoneScreen({ station, onNext }) {
-    const isLast = station.id === STATION_DATA.length;
+    const { stations } = useStations();
+    const isLast = station.id === stations.length;
 
     return (
         <div className="w-full min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden bg-background">
@@ -41,7 +42,7 @@ export default function TaskDoneScreen({ station, onNext }) {
                     </div>
                     
                     <div className="text-[10px] font-body text-white/40 uppercase tracking-widest">
-                        Collect {STATION_DATA.length} fragments to unlock the core
+                        Collect {stations.length} fragments to unlock the core
                     </div>
                 </div>
 

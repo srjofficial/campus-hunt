@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { STATION_DATA } from '../data';
+import { useStations } from '../hooks/useStations';
 import { supabase } from '../lib/supabase';
 import { useGameState } from '../hooks/useGameState';
 import ElectricCard from '../components/ElectricCard';
@@ -18,6 +18,7 @@ export default function QuestionScreen({ station, onCorrect, onWrong }) {
     const [locked, setLocked] = useState(false);
     const [answerResult, setAnswerResult] = useState('unanswered'); // 'unanswered' | 'correct' | 'wrong'
     const { getUsername } = useGameState();
+    const { stations } = useStations();
 
     const handleAnswer = async (idx) => {
         if (locked) return;
@@ -97,7 +98,7 @@ export default function QuestionScreen({ station, onCorrect, onWrong }) {
                     {/* Header Meta */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                         <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                            Station {station.id} / {STATION_DATA.length}
+                            Station {station.id} / {stations.length}
                         </div>
                     </div>
 
