@@ -1,0 +1,115 @@
+/* ── Fonts ────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ── Tailwind ─────────────────────────────────────────────────── */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Hard-coded base styles (CSS variables for reliability) ────── */
+
+/* These are NOT via @apply — plain CSS so they always work
+   regardless of Tailwind compilation state */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  background: #050505;
+  color: #F5F5F5;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  background: #050505;
+  color: #F5F5F5;
+  font-family: 'Inter', 'Space Grotesk', sans-serif;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  background: #050505;
+  color: #F5F5F5;
+}
+
+/* Strip browser native styling from form elements */
+input, textarea, select {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: inherit;
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-family: inherit;
+}
+
+/* Chrome autofill override */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #F5F5F5;
+  -webkit-box-shadow: 0 0 0 1000px #050505 inset;
+  box-shadow: 0 0 0 1000px #050505 inset;
+  caret-color: #F5F5F5;
+}
+
+/* ── Atmospheric overlays ─────────────────────────────────────── */
+
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
+  opacity: 0.04;
+}
+
+.vignette-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+  pointer-events: none;
+  background: radial-gradient(circle, transparent 40%, rgba(5,5,5,0.95) 150%);
+}
+
+/* ── Custom keyframes ─────────────────────────────────────────── */
+
+@keyframes glitch {
+  0%   { transform: translate(0); }
+  20%  { transform: translate(-2px, 2px); }
+  40%  { transform: translate(-2px, -2px); }
+  60%  { transform: translate(2px, 2px); }
+  80%  { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+@keyframes pulseRed {
+  0%, 100% { box-shadow: 0 0 10px #8B0000; }
+  50%       { box-shadow: 0 0 25px #FF2E2E; }
+}
+
+@keyframes scan {
+  0%   { top: 0; }
+  100% { top: 100%; }
+}
+
+/* ── Tailwind layer overrides ─────────────────────────────────── */
+@layer base {
+  body {
+    background-color: #050505;
+    color: #F5F5F5;
+  }
+}
