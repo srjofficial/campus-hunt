@@ -75,16 +75,12 @@ export default function App() {
 
   // After loading finishes, sync with Supabase and route appropriately
   const handleLoadingDone = async () => {
-    // If no specific station is scanned, we just want to show the Dashboard
-    if (!currentStation) {
-      setScreen(SCREENS.DASHBOARD);
-      return;
-    }
-
     const username = getUsername();
+    let thisAns = null;
+
+    // Always fetch past answers to restore dashboard state if we have a user
     if (username) {
       try {
-        // Fetch all answers for this player to restore game progress across logins
         const { data: allAnswers } = await supabase
           .from('hunt_answers')
           .select('*')
@@ -99,14 +95,8 @@ export default function App() {
           });
 
           // Check if they already answered THIS specific station scanned
-          const thisAns = allAnswers.find(a => a.station_id === currentStation.id);
-          if (thisAns) {
-            setStation(currentStation);
-            setIsRevisit(true);
-            // Show outcome again instead of a generic "Already Done"
-            if (thisAns.is_correct) setScreen(SCREENS.CORRECT);
-            else setScreen(SCREENS.WRONG);
-            return;
+          if (currentStation) {
+            thisAns = allAnswers.find(a => a.station_id === currentStation.id);
           }
         }
       } catch (err) {
@@ -114,6 +104,22 @@ export default function App() {
       }
     }
 
+    // If no specific station is scanned, we just want to show the Dashboard
+    if (!currentStation) {
+      setScreen(SCREENS.DASHBOARD);
+      return;
+    }
+
+    // If they scanned a station they already answered, show outcome
+    if (thisAns) {
+      setStation(currentStation);
+      setIsRevisit(true);
+      if (thisAns.is_correct) setScreen(SCREENS.CORRECT);
+      else setScreen(SCREENS.WRONG);
+      return;
+    }
+
+    // Otherwise, it's a new station for them
     setStation(currentStation);
     setIsRevisit(false);
     setScreen(SCREENS.QUESTION);
