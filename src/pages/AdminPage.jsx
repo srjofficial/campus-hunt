@@ -506,16 +506,22 @@ export default function AdminPage() {
                                         <td style={{ color: 'var(--text3)' }}>{i + 1}</td>
                                         <td><b>{l.username}</b></td>
                                         <td>
-                                            <span style={{
-                                                background: 'rgba(108,99,255,0.15)',
-                                                color: 'var(--primary2)',
-                                                padding: '3px 10px',
-                                                borderRadius: '99px',
-                                                fontSize: '12px',
-                                                fontWeight: 700
-                                            }}>
-                                                Station {l.station_id}{stations.find(s => s.id === l.station_id) ? ` — ${stations.find(s => s.id === l.station_id).name}` : ''}
-                                            </span>
+                                            {l.station_id ? (
+                                                <span style={{
+                                                    background: 'rgba(108,99,255,0.15)',
+                                                    color: 'var(--primary2)',
+                                                    padding: '3px 10px',
+                                                    borderRadius: '99px',
+                                                    fontSize: '12px',
+                                                    fontWeight: 700
+                                                }}>
+                                                    Station {l.station_id}
+                                                    {' — '}
+                                                    {l.station_name || stations.find(s => s.id === l.station_id)?.name || '?'}
+                                                </span>
+                                            ) : (
+                                                <span style={{ color: 'var(--text3)', fontSize: '12px' }}>— (direct login)</span>
+                                            )}
                                         </td>
                                         <td style={{ color: 'var(--text2)', fontSize: '13px' }}>
                                             {new Date(l.logged_in_at).toLocaleString()}

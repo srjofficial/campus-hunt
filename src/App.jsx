@@ -211,7 +211,7 @@ export default function App() {
       <div className="vignette-overlay" />
       <div className="relative z-10 w-full min-h-screen text-foreground">
         {screen === SCREENS.INTRO && <CinematicIntro onComplete={handleIntroComplete} />}
-        {screen === SCREENS.LOGIN && <LoginScreen onSuccess={handleLoginSuccess} />}
+        {screen === SCREENS.LOGIN && <LoginScreen onSuccess={handleLoginSuccess} stations={stations} />}
         {screen === SCREENS.LOADING && <LoadingScreen onDone={handleLoadingDone} />}
         {screen === SCREENS.NO_STATION && <NoStationScreen />}
         {screen === SCREENS.DASHBOARD && <DashboardScreen onScanStation={handleScanStation} />}

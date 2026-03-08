@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useGameState } from '../hooks/useGameState';
 
 
-export default function LoginScreen({ onSuccess }) {
+export default function LoginScreen({ onSuccess, stations = [] }) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -31,10 +31,27 @@ export default function LoginScreen({ onSuccess }) {
 
             if (data) {
                 // Log the login event
-                const stationId = new URLSearchParams(window.location.search).get('station');
+                const rawStationParam = new URLSearchParams(window.location.search).get('station');
+                let stationId = null;
+                let stationName = null;
+                if (rawStationParam) {
+                    // Station param is base64 encoded (e.g. 'Ng==' = 6)
+                    try {
+                        stationId = parseInt(atob(rawStationParam), 10);
+                    } catch (_) {
+                        stationId = parseInt(rawStationParam, 10);
+                    }
+                    if (!isNaN(stationId)) {
+                        const found = stations.find(s => s.id === stationId);
+                        stationName = found ? found.name : null;
+                    } else {
+                        stationId = null;
+                    }
+                }
                 await supabase.from('hunt_logins').insert([{
                     username: username.trim(),
-                    station_id: stationId ? parseInt(stationId) : null,
+                    station_id: stationId,
+                    station_name: stationName,
                     logged_in_at: new Date().toISOString()
                 }]);
 

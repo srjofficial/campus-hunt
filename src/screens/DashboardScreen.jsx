@@ -8,6 +8,8 @@ export default function DashboardScreen({ onScanStation }) {
     const { getCollected, getCompleted, getUsername } = useGameState();
     const [showScanner, setShowScanner] = useState(false);
     const [scanError, setScanError] = useState(null);
+    const [scannerKey, setScannerKey] = useState(0);
+    const [scanned, setScanned] = useState(false);
 
     const collectedObj = getCollected();
     const completedArr = getCompleted();
@@ -38,33 +40,67 @@ export default function DashboardScreen({ onScanStation }) {
     }));
 
     const handleScan = (result) => {
+        if (scanned) return; // prevent multiple fires
         if (result && result.length > 0) {
             const scanResult = result[0].rawValue;
+            console.log('[QR Scan] Raw value:', scanResult); // DEBUG
+            setScanned(true);
             try {
-                // expecting url like: http://domain.com/?station=X
+                // expecting url like: http://domain.com/?station=X (station may be base64 encoded)
                 const url = new URL(scanResult);
                 const stationStr = url.searchParams.get('station');
                 if (stationStr) {
-                    const parsedId = parseInt(stationStr, 10);
+                    // Try direct integer first, then base64 decode
+                    let parsedId = parseInt(stationStr, 10);
+                    if (isNaN(parsedId)) {
+                        try {
+                            const decoded = atob(stationStr);
+                            parsedId = parseInt(decoded, 10);
+                        } catch (_) {}
+                    }
                     if (!isNaN(parsedId)) {
                         setShowScanner(false);
                         onScanStation(parsedId);
                         return;
                     }
                 }
-                setScanError("Invalid QR Code for Campus Hunt.");
+                setScanError(`Invalid QR Code for Campus Hunt.`);
+                setScanned(false);
             } catch (e) {
-                // Could be just a raw number if they set it up that way
-                const parsedId = parseInt(scanResult, 10);
+                // Could be just a raw number or base64 number
+                let parsedId = parseInt(scanResult, 10);
+                if (isNaN(parsedId)) {
+                    try {
+                        parsedId = parseInt(atob(scanResult), 10);
+                    } catch (_) {}
+                }
                 if (!isNaN(parsedId)) {
                     setShowScanner(false);
                     onScanStation(parsedId);
                     return;
                 }
-                setScanError("Invalid QR Code.");
-                console.error("Scan error", e);
+                setScanError(`Invalid QR Code.`);
+                setScanned(false);
             }
         }
+    };
+
+    const handleScanError = (error) => {
+        console.error('QR Scanner error:', error);
+        const msg = error?.message || String(error);
+        if (msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('notallowed')) {
+            setScanError('Camera permission denied. Please allow camera access and try again.');
+        } else if (msg.toLowerCase().includes('notfound') || msg.toLowerCase().includes('no camera')) {
+            setScanError('No camera found on this device.');
+        } else {
+            setScanError('Camera error: ' + msg);
+        }
+    };
+
+    const handleRetry = () => {
+        setScanError(null);
+        setScanned(false);
+        setScannerKey(k => k + 1); // remount scanner
     };
 
     return (
@@ -169,23 +205,34 @@ export default function DashboardScreen({ onScanStation }) {
                             </button>
                         </div>
 
-                        <div className="rounded border border-white/10 overflow-hidden relative bg-background aspect-square">
-                            <div className="absolute inset-0 border-2 border-neon-red/50 z-20 pointer-events-none rounded scale-[0.9] opacity-50" />
+                        <div className="rounded border border-white/10 overflow-hidden relative bg-background">
                             {/* Four corner targeting brackets */}
-                            <div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-neon-red z-30" />
-                            <div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-neon-red z-30" />
-                            <div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-neon-red z-30" />
-                            <div className="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-neon-red z-30" />
+                            <div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-neon-red z-30 pointer-events-none" />
+                            <div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-neon-red z-30 pointer-events-none" />
+                            <div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-neon-red z-30 pointer-events-none" />
+                            <div className="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-neon-red z-30 pointer-events-none" />
 
-                            <Scanner 
-                                onScan={handleScan} 
+                            <Scanner
+                                key={scannerKey}
+                                onScan={handleScan}
+                                onError={handleScanError}
+                                formats={['qr_code']}
+                                sound={false}
+                                scanDelay={1500}
                                 constraints={{ facingMode: 'environment' }}
+                                components={{ finder: false }}
                             />
                         </div>
 
                         {scanError && (
-                            <div className="mt-4 p-2 bg-blood-red/20 border border-neon-red text-neon-red text-center text-xs font-cinematic uppercase tracking-widest animate-glitch">
-                                {scanError}
+                            <div className="mt-4 p-2 bg-blood-red/20 border border-neon-red text-neon-red text-center text-xs font-cinematic uppercase tracking-widest">
+                                <div>{scanError}</div>
+                                <button
+                                    onClick={handleRetry}
+                                    className="mt-2 text-white/70 hover:text-white underline text-xs"
+                                >
+                                    Tap to retry
+                                </button>
                             </div>
                         )}
                     </div>
