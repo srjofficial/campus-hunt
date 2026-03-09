@@ -1,8 +1,20 @@
+import { useState } from 'react';
 import { useGameState } from '../hooks/useGameState';
 import ElectricCard from '../components/ElectricCard';
 
 export default function WrongScreen({ station, isRevisit, onTaskDone }) {
     const { getUsername } = useGameState();
+
+    // Persist unlock state in localStorage keyed per station
+    const storageKey = `wa_unlocked_station_${station.id}`;
+    const [unlocked, setUnlocked] = useState(() => {
+        try { return localStorage.getItem(storageKey) === '1'; } catch { return false; }
+    });
+
+    const handleWhatsAppTap = () => {
+        try { localStorage.setItem(storageKey, '1'); } catch {}
+        setUnlocked(true);
+    };
 
     const handleTaskDone = () => {
         onTaskDone(station);
@@ -56,9 +68,15 @@ export default function WrongScreen({ station, isRevisit, onTaskDone }) {
                             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '16px', lineHeight: '1.6' }}>
                                 Record visual proof and transmit to command:
                             </p>
-                            <div style={{ display: 'inline-block', border: '1px solid rgba(52,211,153,0.5)', background: 'rgba(52,211,153,0.08)', padding: '10px 24px', color: '#34d399', fontFamily: 'Orbitron, sans-serif', fontWeight: '700', fontSize: '18px', letterSpacing: '0.1em', marginBottom: '16px', boxShadow: '0 0 15px rgba(52,211,153,0.1)' }}>
-                                +91 98765 43210
-                            </div>
+                            <a
+                                href="https://wa.me/918590723437"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={handleWhatsAppTap}
+                                style={{ display: 'inline-block', border: '1px solid rgba(52,211,153,0.5)', background: 'rgba(52,211,153,0.08)', padding: '10px 24px', color: '#34d399', fontFamily: 'Orbitron, sans-serif', fontWeight: '700', fontSize: '18px', letterSpacing: '0.1em', marginBottom: '16px', boxShadow: '0 0 15px rgba(52,211,153,0.1)', textDecoration: 'none', cursor: 'pointer' }}
+                            >
+                                +91 85907 23437
+                            </a>
                             <div style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '9px', color: 'rgba(255,255,255,0.25)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>
                                 Include syntax:
                             </div>
@@ -69,14 +87,26 @@ export default function WrongScreen({ station, isRevisit, onTaskDone }) {
                     </div>
                 </ElectricCard>
 
+                {/* Override button — locked until WhatsApp number is tapped */}
                 <button
-                    onClick={handleTaskDone}
-                    className="w-full mt-6 bg-[rgba(168,85,247,0.1)] border border-purple-500 py-4 font-cinematic uppercase tracking-[0.2em] font-bold text-purple-400 hover:bg-purple-600 hover:text-white transition-all duration-300 group relative overflow-hidden"
+                    onClick={unlocked ? handleTaskDone : undefined}
+                    disabled={!unlocked}
+                    className={`w-full mt-6 py-4 font-cinematic uppercase tracking-[0.2em] font-bold transition-all duration-300 relative overflow-hidden
+                        ${unlocked
+                            ? 'bg-[rgba(168,85,247,0.1)] border border-purple-500 text-purple-400 hover:bg-purple-600 hover:text-white cursor-pointer group'
+                            : 'bg-white/5 border border-white/10 text-white/25 cursor-not-allowed'
+                        }`}
                 >
-                    <div className="absolute inset-0 bg-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="absolute inset-0 translate-x-[2px] bg-purple-400 mix-blend-screen opacity-50 animate-pulse" />
-                    </div>
-                    <span className="relative z-10">Data Transmitted — Override</span>
+                    {unlocked && (
+                        <div className="absolute inset-0 bg-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div className="absolute inset-0 translate-x-[2px] bg-purple-400 mix-blend-screen opacity-50 animate-pulse" />
+                        </div>
+                    )}
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+
+                        Data Transmitted — Override
+                        {!unlocked && <span className="text-[10px] tracking-widest normal-case opacity-60 ml-1">tap WhatsApp first</span>}
+                    </span>
                 </button>
 
             </div>

@@ -188,17 +188,33 @@ export default function LoginScreen({ onSuccess, stations = [] }) {
                         type="button"
                         onClick={handleLogin}
                         disabled={loading}
-                        className="w-full relative overflow-hidden bg-[rgba(255,0,0,0.1)] border border-neon-red/50 hover:bg-neon-red hover:text-black transition-all duration-300 py-4 font-cinematic uppercase tracking-[0.2em] font-bold text-neon-red mt-8 group disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{
+                            background: 'linear-gradient(135deg, #8B0000 0%, #CC0000 50%, #8B0000 100%)',
+                            boxShadow: '0 0 18px rgba(255,46,46,0.6), 0 0 40px rgba(255,46,46,0.25), inset 0 1px 0 rgba(255,255,255,0.1)',
+                            animation: 'btnPulse 2s ease-in-out infinite',
+                        }}
+                        className="w-full relative overflow-hidden border border-neon-red mt-8 py-4 font-cinematic uppercase tracking-[0.2em] font-bold text-white transition-all duration-300 group disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-125 active:scale-[0.98]"
                     >
-                        {/* Glitch hover effect */}
-                        <div className="absolute inset-0 bg-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                            <div className="absolute inset-0 translate-x-[2px] bg-red-500 mix-blend-screen opacity-50" />
-                            <div className="absolute inset-0 -translate-x-[2px] bg-blue-500 mix-blend-screen opacity-50" />
+                        {/* Shimmer sweep */}
+                        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                            <div className="absolute top-0 left-[-100%] w-[60%] h-full bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-[-20deg] group-hover:animate-[shimmerBtn_0.6s_ease_forwards]" />
                         </div>
-                        <span className="relative z-10 transition-colors duration-300 group-hover:animate-pulse">
+                        {/* Top shine line */}
+                        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none" />
+                        <span className="relative z-10">
                             {loading ? 'Decrypting...' : 'Initiate Sequence →'}
                         </span>
                     </button>
+                    <style>{`
+                        @keyframes btnPulse {
+                            0%, 100% { box-shadow: 0 0 18px rgba(255,46,46,0.6), 0 0 40px rgba(255,46,46,0.25), inset 0 1px 0 rgba(255,255,255,0.1); }
+                            50%       { box-shadow: 0 0 28px rgba(255,46,46,0.9), 0 0 60px rgba(255,46,46,0.4), inset 0 1px 0 rgba(255,255,255,0.1); }
+                        }
+                        @keyframes shimmerBtn {
+                            0%   { left: -100%; }
+                            100% { left: 150%; }
+                        }
+                    `}</style>
                     
                 </form>
 

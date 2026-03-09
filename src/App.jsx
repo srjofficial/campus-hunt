@@ -201,7 +201,7 @@ export default function App() {
       }}>
         <EtherealShadow
           color={getShadowColor()}
-          animation={{ scale: 60, speed: 30 }}
+          animation={{ scale: 60, speed: 70 }}
           noise={{ opacity: 0.6, scale: 1.5 }}
           sizing="fill"
           style={{ width: '100%', height: '100%' }}

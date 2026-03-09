@@ -18,6 +18,10 @@ export default function AdminPage() {
     const [logins, setLogins] = useState([]);
     const [loginStatus, setLoginStatus] = useState('⏳ Loading activity...');
 
+    // Search filters
+    const [loginSearch, setLoginSearch] = useState('');
+    const [answerSearch, setAnswerSearch] = useState('');
+
     // Answer activity state
     const [answers, setAnswers] = useState([]);
     const [answerStatus, setAnswerStatus] = useState('⏳ Loading answers...');
@@ -487,6 +491,16 @@ export default function AdminPage() {
                         <p style={{ color: 'var(--text2)', fontSize: '14px' }}>Live log of players who scanned a QR and logged in. Auto-refreshes every 30s.</p>
                         <GlassButton size="sm" variant="green" onClick={loadLogins}>🔄 Refresh</GlassButton>
                     </div>
+                    <div style={{ marginBottom: '16px' }}>
+                        <input
+                            type="text"
+                            className="cred-input"
+                            style={{ width: '100%', maxWidth: '320px' }}
+                            placeholder="🔍 Search by team name..."
+                            value={loginSearch}
+                            onChange={e => setLoginSearch(e.target.value)}
+                        />
+                    </div>
                     {loginStatus && <p style={{ color: 'var(--text3)', fontSize: '13px', padding: '10px 0' }}>{loginStatus}</p>}
                     {logins.length === 0 && !loginStatus ? (
                         <p className="cred-empty">No logins yet. Players will appear here after scanning a QR and logging in.</p>
@@ -501,7 +515,7 @@ export default function AdminPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {logins.map((l, i) => (
+                                {logins.filter(l => l.username?.toLowerCase().includes(loginSearch.toLowerCase())).map((l, i) => (
                                     <tr key={l.id}>
                                         <td style={{ color: 'var(--text3)' }}>{i + 1}</td>
                                         <td><b>{l.username}</b></td>
@@ -543,6 +557,16 @@ export default function AdminPage() {
                         <p style={{ color: 'var(--text2)', fontSize: '14px' }}>Every answer submitted by players — correct or wrong. Auto-refreshes every 30s.</p>
                         <GlassButton size="sm" variant="amber" onClick={loadAnswers}>🔄 Refresh</GlassButton>
                     </div>
+                    <div style={{ marginBottom: '16px' }}>
+                        <input
+                            type="text"
+                            className="cred-input"
+                            style={{ width: '100%', maxWidth: '320px' }}
+                            placeholder="🔍 Search by team name..."
+                            value={answerSearch}
+                            onChange={e => setAnswerSearch(e.target.value)}
+                        />
+                    </div>
                     {answerStatus && <p style={{ color: 'var(--text3)', fontSize: '13px', padding: '10px 0' }}>{answerStatus}</p>}
                     {answers.length === 0 && !answerStatus ? (
                         <p className="cred-empty">No answers yet. They will appear here once players start answering questions.</p>
@@ -559,7 +583,7 @@ export default function AdminPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {answers.map((a, i) => (
+                                {answers.filter(a => a.username?.toLowerCase().includes(answerSearch.toLowerCase())).map((a, i) => (
                                     <tr key={a.id}>
                                         <td style={{ color: 'var(--text3)' }}>{i + 1}</td>
                                         <td><b>{a.username}</b></td>
@@ -579,7 +603,7 @@ export default function AdminPage() {
                                                     padding: '3px 12px', borderRadius: '99px',
                                                     fontSize: '12px', fontWeight: 700,
                                                     border: '1px solid rgba(0,229,160,0.3)'
-                                                }}>✅ Correct</span>
+                                                }}>Correct</span>
                                             ) : (
                                                 <span style={{
                                                     background: 'rgba(255,107,107,0.1)',
@@ -587,7 +611,7 @@ export default function AdminPage() {
                                                     padding: '3px 12px', borderRadius: '99px',
                                                     fontSize: '12px', fontWeight: 700,
                                                     border: '1px solid rgba(255,107,107,0.3)'
-                                                }}>❌ Wrong</span>
+                                                }}>Wrong</span>
                                             )}
                                         </td>
                                         <td style={{ color: 'var(--text2)', fontSize: '12px' }}>
