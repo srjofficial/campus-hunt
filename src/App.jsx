@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import { useGameState } from './hooks/useGameState';
 import { useStations } from './hooks/useStations';
 import { supabase } from './lib/supabase';
-import EtherealShadow from './components/EtherealShadow';
 import LoginScreen from './screens/LoginScreen';
 import LoadingScreen from './screens/LoadingScreen';
 import NoStationScreen from './screens/NoStationScreen';
@@ -211,7 +210,17 @@ export default function App() {
   };
 
   if (loading) {
-    return <EtherealShadow color="rgba(139, 0, 0, 0.8)" sizing="fill" style={{ width: '100%', height: '100%' }} />;
+    return (
+      <div style={{
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#000000',
+        backgroundImage: `url("https://framerusercontent.com/images/g0QcWrxr87K0ufOxIUFBakwYA8.png")`,
+        backgroundSize: '240px',
+        backgroundRepeat: 'repeat',
+        opacity: 0.8
+      }} />
+    );
   }
 
   const getShadowColor = () => {
@@ -231,21 +240,26 @@ export default function App() {
 
   return (
     <>
-      {/* Universal Ethereal Shadow Background */}
+      {/* Universal Background */}
       <div style={{
         position: 'fixed',
         inset: 0,
         zIndex: 0,
         pointerEvents: 'none',
-      }}>
-        <EtherealShadow
-          color={getShadowColor()}
-          animation={{ scale: 60, speed: 70 }}
-          noise={{ opacity: 0.6, scale: 1.5 }}
-          sizing="fill"
-          style={{ width: '100%', height: '100%' }}
-        />
-      </div>
+        background: `radial-gradient(circle at center, ${getShadowColor()} 0%, #000000 100%)`,
+      }} />
+      {/* Black / Red Grains Overlay */}
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 1,
+        pointerEvents: 'none',
+        backgroundImage: `url("https://framerusercontent.com/images/g0QcWrxr87K0ufOxIUFBakwYA8.png")`,
+        backgroundSize: '240px',
+        backgroundRepeat: 'repeat',
+        opacity: 0.15,
+        mixBlendMode: 'overlay', // Gives the grains a colored tint according to the glow
+      }} />
       <div className="noise-overlay" />
       <div className="vignette-overlay" />
       <div className="relative z-10 w-full min-h-screen text-foreground">

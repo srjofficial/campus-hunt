@@ -270,7 +270,7 @@ export default function DashboardScreen({ onScanStation, onScanMeme }) {
             </div>
 
             {/* Custom Tailwind animation injection for the scanner sweep since we didn't add it to tailwind config yet */}
-            <style jsx>{`
+            <style>{`
                 @keyframes shimmer {
                     0% { transform: translateX(-100%); }
                     100% { transform: translateX(50%); }
