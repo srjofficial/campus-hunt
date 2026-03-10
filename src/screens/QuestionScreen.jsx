@@ -80,11 +80,7 @@ export default function QuestionScreen({ station, onCorrect, onWrong }) {
         <div style={{ width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '48px', paddingLeft: '20px', paddingRight: '20px', paddingBottom: '80px', position: 'relative', overflow: 'hidden' }}>
             <div style={{ width: '100%', maxWidth: '560px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-                {/* Station Badge */}
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 16px', alignSelf: 'flex-start' }}>
-                    <span style={{ color: '#FF2E2E' }}>📍</span>
-                    <span style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '11px', fontWeight: '700', letterSpacing: '0.15em', color: '#F5F5F5', textTransform: 'uppercase' }}>{station.name}</span>
-                </div>
+
 
                 {/* ElectricCard wrapping the entire question */}
                 <ElectricCard
@@ -103,9 +99,20 @@ export default function QuestionScreen({ station, onCorrect, onWrong }) {
                     </div>
 
                     {/* Question */}
-                    <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '19px', fontWeight: '700', color: '#F5F5F5', marginBottom: '24px', lineHeight: '1.55', paddingBottom: '8px' }}>
+                    <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '19px', fontWeight: '700', color: '#F5F5F5', marginBottom: station.imageUrl ? '16px' : '24px', lineHeight: '1.55', paddingBottom: '8px' }}>
                         {station.question}
                     </h2>
+
+                    {/* Question Image */}
+                    {station.imageUrl && (
+                        <div style={{ width: '100%', marginBottom: '24px', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)' }}>
+                            <img
+                                src={station.imageUrl}
+                                alt="Question illustration"
+                                style={{ width: '100%', display: 'block', objectFit: 'contain', maxHeight: '280px' }}
+                            />
+                        </div>
+                    )}
 
                     {/* Options */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>

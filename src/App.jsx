@@ -16,6 +16,8 @@ import WaitingScreen from './screens/WaitingScreen';
 import FinalScreen from './screens/FinalScreen';
 import DashboardScreen from './screens/DashboardScreen';
 import CinematicIntro from './screens/CinematicIntro';
+import FakeMemeScreen from './screens/FakeMemeScreen';
+import { MEME_FILES } from './data/memes';
 
 const SCREENS = {
   INTRO: 'intro',
@@ -30,6 +32,7 @@ const SCREENS = {
   TASK_DONE: 'task-done',
   WAITING: 'waiting',
   FINAL: 'final',
+  MEME: 'meme',
 };
 
 export default function App() {
@@ -47,8 +50,18 @@ export default function App() {
       stationId = parseInt(rawStationParam);
     }
   }
-  
   const hasStation = !isNaN(stationId);
+
+  let memeIndex = NaN;
+  const rawMemeParam = searchParams.get('meme');
+  if (rawMemeParam) {
+    try {
+      memeIndex = parseInt(atob(rawMemeParam));
+    } catch (e) {
+      memeIndex = parseInt(rawMemeParam);
+    }
+  }
+  const hasMeme = !isNaN(memeIndex) && memeIndex >= 0 && memeIndex < MEME_FILES.length;
 
   // Always start at login — skip the scrolling cinematic intro
   const initialScreen = SCREENS.LOGIN;
@@ -102,6 +115,18 @@ export default function App() {
       } catch (err) {
         console.error('Answer check failed:', err);
       }
+    }
+
+    // Check if the user has already finished the entire hunt
+    if (getCompleted().length >= stations.length && stations.length > 0) {
+      setScreen(SCREENS.FINAL);
+      return;
+    }
+
+    // If they scanned a fake QR (meme trap)
+    if (hasMeme) {
+      setScreen(SCREENS.MEME);
+      return;
     }
 
     // If no specific station is scanned, we just want to show the Dashboard
@@ -166,9 +191,23 @@ export default function App() {
     const parsedParams = new URLSearchParams(window.location.search);
     // encode station ID to base64 when updating URL
     parsedParams.set('station', btoa(id.toString()));
+    parsedParams.delete('meme');
     window.history.pushState(null, '', `?${parsedParams.toString()}`);
     // Reload so App state grabs the station
     window.location.reload();
+  };
+
+  const handleScanMeme = (id) => {
+    const parsedParams = new URLSearchParams(window.location.search);
+    parsedParams.set('meme', btoa(id.toString()));
+    parsedParams.delete('station');
+    window.history.pushState(null, '', `?${parsedParams.toString()}`);
+    window.location.reload();
+  };
+  
+  const handleMemeSkip = () => {
+    window.history.pushState(null, '', window.location.pathname);
+    setScreen(SCREENS.DASHBOARD);
   };
 
   if (loading) {
@@ -214,7 +253,7 @@ export default function App() {
         {screen === SCREENS.LOGIN && <LoginScreen onSuccess={handleLoginSuccess} stations={stations} />}
         {screen === SCREENS.LOADING && <LoadingScreen onDone={handleLoadingDone} />}
         {screen === SCREENS.NO_STATION && <NoStationScreen />}
-        {screen === SCREENS.DASHBOARD && <DashboardScreen onScanStation={handleScanStation} />}
+        {screen === SCREENS.DASHBOARD && <DashboardScreen onScanStation={handleScanStation} onScanMeme={handleScanMeme} />}
         {screen === SCREENS.ALREADY && <AlreadyDoneScreen station={station} />}
         {screen === SCREENS.QUESTION && <QuestionScreen station={station} onCorrect={handleCorrect} onWrong={handleWrong} />}
         {screen === SCREENS.CORRECT && <CorrectScreen station={station} isRevisit={isRevisit} onNext={handleCorrectNext} />}
@@ -222,6 +261,7 @@ export default function App() {
         {screen === SCREENS.TASK_DONE && <TaskDoneScreen station={station} isRevisit={isRevisit} onNext={handleTaskDoneNext} />}
         {screen === SCREENS.WAITING && <WaitingScreen station={station} />}
         {screen === SCREENS.FINAL && <FinalScreen />}
+        {screen === SCREENS.MEME && hasMeme && <FakeMemeScreen memeFilename={MEME_FILES[memeIndex]} onSkip={handleMemeSkip} />}
       </div>
     </>
   );

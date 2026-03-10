@@ -3,7 +3,7 @@ import { useGameState } from '../hooks/useGameState';
 import { useStations } from '../hooks/useStations';
 import { Scanner } from '@yudiel/react-qr-scanner';
 
-export default function DashboardScreen({ onScanStation }) {
+export default function DashboardScreen({ onScanStation, onScanMeme }) {
     const { stations } = useStations();
     const { getCollected, getCompleted, getUsername } = useGameState();
     const [showScanner, setShowScanner] = useState(false);
@@ -48,6 +48,25 @@ export default function DashboardScreen({ onScanStation }) {
             try {
                 // expecting url like: http://domain.com/?station=X (station may be base64 encoded)
                 const url = new URL(scanResult);
+                
+                // Check if it's a Fake Meme QR trap
+                const memeStr = url.searchParams.get('meme');
+                if (memeStr) {
+                    let parsedMemeId = parseInt(memeStr, 10);
+                    if (isNaN(parsedMemeId)) {
+                        try {
+                            const decoded = atob(memeStr);
+                            parsedMemeId = parseInt(decoded, 10);
+                        } catch (_) {}
+                    }
+                    if (!isNaN(parsedMemeId)) {
+                        setShowScanner(false);
+                        if (onScanMeme) onScanMeme(parsedMemeId);
+                        return;
+                    }
+                }
+
+                // Check if it's a valid Station QR
                 const stationStr = url.searchParams.get('station');
                 if (stationStr) {
                     // Try direct integer first, then base64 decode
@@ -172,6 +191,17 @@ export default function DashboardScreen({ onScanStation }) {
                     <p className="font-body text-lg text-white/90 relative z-10 leading-relaxed font-medium">
                         {nextClue}
                     </p>
+                    {lastCompletedStation?.id === 3 && (
+                        <div className="mt-4 flex flex-row gap-4 justify-center items-center p-4 bg-black/40 border border-white/10 rounded relative z-10">
+                            <img src="/images/NAND.png" alt="NAND Gate" className="h-[80px] md:h-[100px] w-auto object-contain filter drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
+                            <img src="/images/NOR.png" alt="NOR Gate" className="h-[80px] md:h-[100px] w-auto object-contain filter drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
+                        </div>
+                    )}
+                    {lastCompletedStation?.id === 6 && (
+                        <div className="mt-4 border border-white/10 rounded overflow-hidden relative z-10 w-full flex justify-center bg-black/40">
+                            <img src="/images/lab.jpeg" alt="Coordinate Clue" className="w-full max-h-[300px] object-contain" />
+                        </div>
+                    )}
                 </div>
 
                 {/* Scanner Interface */}

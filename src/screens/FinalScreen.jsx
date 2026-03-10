@@ -39,6 +39,8 @@ export default function FinalScreen() {
         else { word += '_'; return { letter: '?', got: false }; }
     });
 
+
+
     return (
         <div className="relative w-full min-h-screen flex flex-col items-center justify-center px-6 py-12 overflow-hidden bg-background">
             {/* Ambient glow */}
@@ -167,12 +169,9 @@ export default function FinalScreen() {
                     <h1 className="font-cinematic text-3xl font-black tracking-widest text-white uppercase drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]">
                         Mission <span className="text-neon-red">Complete</span>
                     </h1>
-                    <p className="font-body text-sm text-white/50 mt-2 tracking-wider">
-                        You've conquered all stations. Assemble your secret word:
-                    </p>
                 </div>
 
-                {/* Letter grid */}
+                {/* Encrypted Fragments Grid */}
                 <div className="w-full bg-black/60 backdrop-blur-md border border-white/10 p-6 relative">
                     <div className="absolute top-0 left-0 w-8 h-[1px] bg-gold" />
                     <div className="absolute top-0 left-0 w-[1px] h-8 bg-gold" />
@@ -180,7 +179,7 @@ export default function FinalScreen() {
                     <div className="absolute bottom-0 right-0 w-[1px] h-8 bg-gold" />
 
                     <p className="font-cinematic text-xs uppercase tracking-widest text-white/40 mb-4 text-center">
-                        Collected Fragments
+                        Encrypted Fragments
                     </p>
                     <div className="flex flex-wrap justify-center gap-3">
                         {letters.map((l, i) => (
@@ -198,23 +197,10 @@ export default function FinalScreen() {
                     </div>
                 </div>
 
-                {/* Secret word reveal */}
-                <div className="w-full bg-blood-red/5 border border-neon-red/40 p-6 text-center relative overflow-hidden">
-                    <div className="absolute -left-[100%] top-0 w-[200%] h-full bg-gradient-to-r from-transparent via-blood-red/15 to-transparent animate-[shimmer_3s_ease-in-out_infinite]" />
-                    <div className="relative z-10">
-                        <p className="font-cinematic text-xs uppercase tracking-widest text-neon-red/70 mb-2">
-                            🔑 Secret Word
-                        </p>
-                        <div className="font-cinematic text-3xl font-black tracking-[0.4em] text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">
-                            {word.split('').join(' ')}
-                        </div>
-                    </div>
-                </div>
-
-                {/* CTA */}
-                <div className="w-full bg-black/40 border border-gold/30 p-4 text-center rounded">
-                    <p className="font-body text-sm text-gold/80 tracking-wide">
-                        🎁 Show this screen to the organizer to claim your prize!
+                <div className="w-full bg-blood-red/10 border border-neon-red/40 p-8 text-center rounded relative overflow-hidden mt-8 shadow-[0_0_30px_rgba(255,46,46,0.15)]">
+                    <div className="absolute -left-[100%] top-0 w-[200%] h-full bg-gradient-to-r from-transparent via-blood-red/20 to-transparent animate-[shimmer_3s_ease-in-out_infinite]" />
+                    <p className="relative z-10 font-body text-xl font-medium text-white tracking-wide leading-relaxed drop-shadow-[0_0_10px_rgba(255,255,255,0.4)]">
+                        Show this screen to the organizer to proceed to next level!
                     </p>
                 </div>
             </div>

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useStations } from '../hooks/useStations';
 import GlowCard from '../components/GlowCard';
 import GlassButton from '../components/GlassButton';
+import { MEME_FILES } from '../data/memes';
 import './admin.css';
 
 export default function AdminPage() {
@@ -11,12 +12,13 @@ export default function AdminPage() {
     const [qrCards, setQrCards] = useState([]);
     const [urlPreview, setUrlPreview] = useState('...');
     const [videos, setVideos] = useState([]);
-    const [videoStatus, setVideoStatus] = useState('⏳ Loading submissions...');
+    const [videoStatus, setVideoStatus] = useState('Loading submissions...');
     const canvasRefs = useRef({});
+    const memeCanvasRefs = useRef({});
 
     // Login activity state
     const [logins, setLogins] = useState([]);
-    const [loginStatus, setLoginStatus] = useState('⏳ Loading activity...');
+    const [loginStatus, setLoginStatus] = useState('Loading activity...');
 
     // Search filters
     const [loginSearch, setLoginSearch] = useState('');
@@ -24,7 +26,7 @@ export default function AdminPage() {
 
     // Answer activity state
     const [answers, setAnswers] = useState([]);
-    const [answerStatus, setAnswerStatus] = useState('⏳ Loading answers...');
+    const [answerStatus, setAnswerStatus] = useState('Loading answers...');
 
     // Credentials state
     const { stations, refreshStations } = useStations();
@@ -65,14 +67,17 @@ export default function AdminPage() {
         setUrlPreview(base + '?station=' + btoa('1'));
     };
 
-    /* ---- QR Generation ---- */
     const generateAllQRs = async () => {
         const base = getBase();
+        
+        // Station QRs
         const cards = stations.map(station => ({
             station, url: base + '?station=' + btoa(station.id.toString())
         }));
         setQrCards(cards);
+        
         setTimeout(async () => {
+            // Generate Station QRs
             for (const { station, url } of cards) {
                 const canvas = canvasRefs.current[station.id];
                 if (canvas) {
@@ -80,7 +85,33 @@ export default function AdminPage() {
                     catch (err) { console.error(err); }
                 }
             }
+            
+            // Generate Meme QRs
+            for (let i = 0; i < MEME_FILES.length; i++) {
+                const canvas = memeCanvasRefs.current[i];
+                if (canvas) {
+                    const memeUrl = base + '?meme=' + btoa(i.toString());
+                    try { await QRCode.toCanvas(canvas, memeUrl, { width: 180, margin: 1 }); }
+                    catch (err) { console.error(err); }
+                }
+            }
         }, 100);
+    };
+
+    const downloadMemeQR = (index, filename) => {
+        const src = memeCanvasRefs.current[index];
+        if (!src) return;
+        const out = document.createElement('canvas');
+        out.width = 280; out.height = 340;
+        const ctx = out.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 280, 340);
+        ctx.drawImage(src, 50, 20, 180, 180);
+        ctx.fillStyle = '#000'; ctx.font = 'bold 14px Outfit'; ctx.textAlign = 'center';
+        ctx.fillText('CAMPUS HUNT (MEME)', 140, 225);
+        ctx.fillText(filename.substring(0, 25) + '...', 140, 245);
+        const link = document.createElement('a');
+        link.download = `fake-qr-meme-${index}.png`;
+        link.href = out.toDataURL(); link.click();
     };
 
     const downloadQR = (station) => {
@@ -107,10 +138,10 @@ export default function AdminPage() {
                 .not('video_url', 'is', null)
                 .order('created_at', { ascending: false });
             if (error) throw error;
-            if (!data || data.length === 0) { setVideoStatus('📭 No submissions yet'); return; }
+            if (!data || data.length === 0) { setVideoStatus('No submissions yet'); return; }
             setVideos(data); setVideoStatus('');
         } catch (err) {
-            console.error(err); setVideoStatus('❌ Load Error');
+            console.error(err); setVideoStatus('Load Error');
         }
     };
 
@@ -127,7 +158,7 @@ export default function AdminPage() {
             setAnswerStatus('');
         } catch (err) {
             console.error(err);
-            setAnswerStatus('❌ Could not load answers');
+            setAnswerStatus('Could not load answers');
         }
     };
 
@@ -144,7 +175,7 @@ export default function AdminPage() {
             setLoginStatus('');
         } catch (err) {
             console.error(err);
-            setLoginStatus('❌ Could not load activity');
+            setLoginStatus('Could not load activity');
         }
     };
 
@@ -157,13 +188,13 @@ export default function AdminPage() {
             if (error) throw error;
             setCreds(data || []); setCredStatus('');
         } catch (err) {
-            console.error(err); setCredStatus('❌ Failed to load credentials');
+            console.error(err); setCredStatus('Failed to load credentials');
         }
     };
 
     const addCred = async () => {
         if (!newUser.trim() || !newPass.trim()) {
-            setAddMsg('⚠️ Please enter both username and password.'); return;
+            setAddMsg('Please enter both username and password.'); return;
         }
         setAddMsg('');
         try {
@@ -172,11 +203,11 @@ export default function AdminPage() {
                 .insert([{ username: newUser.trim(), password: newPass.trim() }]);
             if (error) throw error;
             setNewUser(''); setNewPass('');
-            setAddMsg('✅ Credential added!');
+            setAddMsg('Credential added!');
             loadCreds();
             setTimeout(() => setAddMsg(''), 2500);
         } catch (err) {
-            console.error(err); setAddMsg('❌ Failed to add: ' + err.message);
+            console.error(err); setAddMsg('Failed to add: ' + err.message);
         }
     };
 
@@ -203,6 +234,22 @@ export default function AdminPage() {
         setSaveStatus('');
     };
 
+    const createNewStation = () => {
+        setEditingStationId('new');
+        setEditForm({
+            id: 'new',
+            name: 'New Station',
+            question: '',
+            imageUrl: '',
+            options: ['', '', '', ''],
+            correctIndex: 0,
+            secretLetter: 'X',
+            nextClue: '',
+            funTask: ''
+        });
+        setSaveStatus('');
+    };
+
     const cancelEditing = () => {
         setEditingStationId(null);
         setEditForm(null);
@@ -210,28 +257,41 @@ export default function AdminPage() {
     };
 
     const saveStation = async () => {
-        setSaveStatus('⏳ Saving...');
+        setSaveStatus('Saving...');
         try {
-            const { error } = await supabase
-                .from('hunt_stations')
-                .update({
-                    name: editForm.name,
-                    question: editForm.question,
-                    options: editForm.options,
-                    correct_index: editForm.correctIndex,
-                    secret_letter: editForm.secretLetter,
-                    next_clue: editForm.nextClue,
-                    fun_task: editForm.funTask
-                })
-                .eq('id', editForm.id);
-            
-            if (error) throw error;
-            setSaveStatus('✅ Saved successfully!');
+            const payload = {
+                name: editForm.name,
+                question: editForm.question,
+                options: editForm.options,
+                correct_index: editForm.correctIndex,
+                secret_letter: editForm.secretLetter,
+                next_clue: editForm.nextClue,
+                fun_task: editForm.funTask
+            };
+
+            if (editingStationId === 'new') {
+                // Determine next ID since Supabase might not be auto-incrementing
+                const maxId = stations.reduce((max, s) => s.id > max ? s.id : max, 0);
+                payload.id = maxId + 1;
+
+                const { error } = await supabase
+                    .from('hunt_stations')
+                    .insert([payload]);
+                if (error) throw error;
+            } else {
+                const { error } = await supabase
+                    .from('hunt_stations')
+                    .update(payload)
+                    .eq('id', editForm.id);
+                if (error) throw error;
+            }
+
+            setSaveStatus('Saved successfully!');
             await refreshStations();
             setTimeout(() => setSaveStatus(''), 3000);
             setEditingStationId(null);
         } catch (e) {
-            setSaveStatus('❌ Error: ' + e.message);
+            setSaveStatus('Error: ' + e.message);
         }
     };
 
@@ -240,7 +300,6 @@ export default function AdminPage() {
         <div className="admin-page">
             {/* Header */}
             <div className="admin-header-bar">
-                <div className="admin-logo">🔍</div>
                 <div className="admin-title">
                     <h1>Campus Hunt — Admin Panel v2.0</h1>
                     <p>Generate QRs · Manage Logins · View Submissions</p>
@@ -252,7 +311,7 @@ export default function AdminPage() {
             <div className="admin-body">
 
             {/* ===== LOGIN CREDENTIALS ===== */}
-            <p className="section-title">🔐 Player Login Credentials</p>
+            <p className="section-title">Player Login Credentials</p>
             <GlowCard glowColor="blue" className="!w-full mb-10 h-auto">
                 <div style={{ padding: '30px' }}>
                     <p style={{ color: 'var(--text2)', fontSize: '14px', marginBottom: '20px' }}>
@@ -323,10 +382,10 @@ export default function AdminPage() {
             </GlowCard>
 
             {/* ===== URL CONFIG / QR ===== */}
-            <p className="section-title">🔗 QR Generator Config</p>
+            <p className="section-title">QR Generator Config</p>
             <GlowCard glowColor="purple" className="!w-full mb-10 h-auto">
                 <div style={{ padding: '30px' }}>
-                    <div className="url-label" style={{ marginBottom: '12px' }}>🌐 Enter the base URL where your app is hosted:</div>
+                    <div className="url-label" style={{ marginBottom: '12px' }}>Enter the base URL where your app is hosted:</div>
                     <div className="url-input-row" style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
                         <input
                             type="text"
@@ -336,7 +395,7 @@ export default function AdminPage() {
                             value={baseUrl}
                             onChange={e => handleBaseChange(e.target.value)}
                         />
-                        <GlassButton size="default" variant="purple" onClick={generateAllQRs}>Generate QRs ✨</GlassButton>
+                        <GlassButton size="default" variant="purple" onClick={generateAllQRs}>Generate QRs</GlassButton>
                     </div>
                     <div className="url-note" style={{ color: 'var(--text3)', fontSize: '13px' }}>Each station QR will link to: <code>{urlPreview}</code></div>
                 </div>
@@ -344,12 +403,12 @@ export default function AdminPage() {
 
             <p className="section-title">QR Codes for All Stations</p>
             <div className="print-row" style={{ marginBottom: '24px' }}>
-                <GlassButton size="default" variant="amber" onClick={() => window.print()}>🖨️ Print All QR Codes</GlassButton>
+                <GlassButton size="default" variant="amber" onClick={() => window.print()}>Print All QR Codes</GlassButton>
             </div>
             <div className="qr-grid">
                 {qrCards.length === 0 && (
                     <p style={{ color: 'var(--text2)', padding: '20px 0' }}>
-                        Enter a base URL and click "Generate QRs ✨" to create QR codes.
+                        Enter a base URL and click "Generate QRs" to create QR codes.
                     </p>
                 )}
                 {qrCards.map(({ station, url }) => (
@@ -360,21 +419,45 @@ export default function AdminPage() {
                                 <canvas ref={el => { canvasRefs.current[station.id] = el; }} />
                             </div>
                             <div className="qr-station-name">{station.name}</div>
-                            <div className="qr-letter">🔐 {station.secretLetter}</div>
+                            <div className="qr-letter">{station.secretLetter}</div>
                             <div className="qr-url">{url}</div>
-                            <GlassButton size="sm" variant="blue" style={{ marginTop: 'auto', width: '100%' }} onClick={() => downloadQR(station)}>⬇️ Download PNG</GlassButton>
+                            <GlassButton size="sm" variant="blue" style={{ marginTop: 'auto', width: '100%' }} onClick={() => downloadQR(station)}>Download PNG</GlassButton>
                         </div>
                     </GlowCard>
-                ))}
+                 ))}
+            </div>
+
+            <p className="section-title mt-10">Fake QR Codes (Meme Traps)</p>
+            <div className="qr-grid">
+                {MEME_FILES.map((filename, i) => {
+                    const url = getBase() + '?meme=' + btoa(i.toString());
+                    return (
+                        <GlowCard key={`meme-${i}`} glowColor="red" width={280} height={420}>
+                            <div className="qr-card" style={{ height: '100%', border: 'none', background: 'transparent' }}>
+                                <div className="qr-station-badge" style={{ background: 'var(--accent)', color: 'white' }}>FAKE QR {i+1}</div>
+                                <div className="qr-canvas-wrap">
+                                    <canvas ref={el => { memeCanvasRefs.current[i] = el; }} />
+                                </div>
+                                <div className="qr-station-name" style={{ fontSize: '11px', lineHeight: '1.2' }}>{filename}</div>
+                                <div className="qr-letter">🤡</div>
+                                <div className="qr-url">{url}</div>
+                                <GlassButton size="sm" variant="red" style={{ marginTop: 'auto', width: '100%' }} onClick={() => downloadMemeQR(i, filename)}>Download PNG</GlassButton>
+                            </div>
+                        </GlowCard>
+                    );
+                })}
             </div>
 
             {/* ===== STATION EDITOR ===== */}
-            <p className="section-title">🛠️ Station Editor</p>
+            <p className="section-title">Station Editor</p>
             <GlowCard glowColor="cyan" className="!w-full mb-10 h-auto">
                 <div style={{ padding: '30px' }}>
-                    <p style={{ color: 'var(--text2)', fontSize: '14px', marginBottom: '20px' }}>
-                        Modify the questions, clues, and tasks directly in the database. Changes apply instantly for all active players.
-                    </p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <p style={{ color: 'var(--text2)', fontSize: '14px', margin: 0, maxWidth: '600px' }}>
+                            Modify the questions, clues, and tasks directly in the database. Changes apply instantly for all active players.
+                        </p>
+                        <GlassButton size="default" variant="green" onClick={createNewStation}>＋ Create New Station</GlassButton>
+                    </div>
                     {saveStatus && <div style={{ marginBottom: '16px', padding: '10px', background: 'rgba(0,0,0,0.5)', border: '1px solid var(--primary)', color: 'white', borderRadius: '4px' }}>{saveStatus}</div>}
                     
                     <table className="summary-table">
@@ -395,7 +478,7 @@ export default function AdminPage() {
                                         </div>
                                     </td>
                                     <td>
-                                        <GlassButton size="sm" variant="blue" onClick={() => startEditing(s)}>✏️ Edit</GlassButton>
+                                        <GlassButton size="sm" variant="blue" onClick={() => startEditing(s)}>Edit</GlassButton>
                                     </td>
                                 </tr>
                             ))}
@@ -405,7 +488,9 @@ export default function AdminPage() {
                     {/* Editor Form Modal / Inline */}
                     {editingStationId && editForm && (
                         <div style={{ marginTop: '30px', padding: '24px', background: 'rgba(0,0,0,0.8)', border: '1px solid var(--primary)', borderRadius: '8px' }}>
-                            <h3 style={{ color: 'white', marginBottom: '16px', fontFamily: 'Orbitron, sans-serif' }}>Editing Station {editForm.id}</h3>
+                            <h3 style={{ color: 'white', marginBottom: '16px', fontFamily: 'Orbitron, sans-serif' }}>
+                                {editingStationId === 'new' ? 'Create New Station' : `Editing Station ${editForm.id}`}
+                            </h3>
                             
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                                 <div>
@@ -421,6 +506,14 @@ export default function AdminPage() {
                             <div style={{ marginBottom: '16px' }}>
                                 <label style={{ display: 'block', color: 'var(--text2)', fontSize: '12px', marginBottom: '4px' }}>Question Prompt</label>
                                 <textarea className="cred-input" style={{ width: '100%', minHeight: '80px', resize: 'vertical' }} value={editForm.question} onChange={e => setEditForm({...editForm, question: e.target.value})} />
+                            </div>
+
+                            <div style={{ marginBottom: '16px' }}>
+                                <label style={{ display: 'block', color: 'var(--text2)', fontSize: '12px', marginBottom: '4px' }}>Question Image URL (optional)</label>
+                                <input className="cred-input" style={{ width: '100%' }} placeholder="https://... or /images/station3-question.jpg" value={editForm.imageUrl || ''} onChange={e => setEditForm({...editForm, imageUrl: e.target.value})} />
+                                {editForm.imageUrl && (
+                                    <img src={editForm.imageUrl} alt="preview" style={{ marginTop: '8px', maxHeight: '120px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.15)', objectFit: 'contain', background: '#111' }} />
+                                )}
                             </div>
 
                             <div style={{ marginBottom: '16px', padding: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px' }}>
@@ -476,7 +569,7 @@ export default function AdminPage() {
 
                             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
                                 <GlassButton size="default" variant="red" onClick={cancelEditing}>Cancel</GlassButton>
-                                <GlassButton size="default" variant="green" onClick={saveStation}>💾 Save Changes immediately</GlassButton>
+                                <GlassButton size="default" variant="green" onClick={saveStation}>Save Changes immediately</GlassButton>
                             </div>
                         </div>
                     )}
@@ -484,19 +577,19 @@ export default function AdminPage() {
             </GlowCard>
 
             {/* ===== PLAYER ACTIVITY ===== */}
-            <p className="section-title">📊 Player Login Activity</p>
+            <p className="section-title">Player Login Activity</p>
             <GlowCard glowColor="green" className="!w-full mb-10 h-auto">
                 <div style={{ padding: '30px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                         <p style={{ color: 'var(--text2)', fontSize: '14px' }}>Live log of players who scanned a QR and logged in. Auto-refreshes every 30s.</p>
-                        <GlassButton size="sm" variant="green" onClick={loadLogins}>🔄 Refresh</GlassButton>
+                        <GlassButton size="sm" variant="green" onClick={loadLogins}>Refresh</GlassButton>
                     </div>
                     <div style={{ marginBottom: '16px' }}>
                         <input
                             type="text"
                             className="cred-input"
                             style={{ width: '100%', maxWidth: '320px' }}
-                            placeholder="🔍 Search by team name..."
+                            placeholder="Search by team name..."
                             value={loginSearch}
                             onChange={e => setLoginSearch(e.target.value)}
                         />
@@ -550,19 +643,19 @@ export default function AdminPage() {
 
 
             {/* ===== ANSWER ACTIVITY ===== */}
-            <p className="section-title">📝 Answer Activity</p>
+            <p className="section-title">Answer Activity</p>
             <GlowCard glowColor="amber" className="!w-full mb-10 h-auto">
                 <div style={{ padding: '30px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                         <p style={{ color: 'var(--text2)', fontSize: '14px' }}>Every answer submitted by players — correct or wrong. Auto-refreshes every 30s.</p>
-                        <GlassButton size="sm" variant="amber" onClick={loadAnswers}>🔄 Refresh</GlassButton>
+                        <GlassButton size="sm" variant="amber" onClick={loadAnswers}>Refresh</GlassButton>
                     </div>
                     <div style={{ marginBottom: '16px' }}>
                         <input
                             type="text"
                             className="cred-input"
                             style={{ width: '100%', maxWidth: '320px' }}
-                            placeholder="🔍 Search by team name..."
+                            placeholder="Search by team name..."
                             value={answerSearch}
                             onChange={e => setAnswerSearch(e.target.value)}
                         />
@@ -626,7 +719,7 @@ export default function AdminPage() {
             </GlowCard>
 
             {/* ===== VIDEO GALLERY ===== */}
-            <p className="section-title">📹 Participant Submissions</p>
+            <p className="section-title">Participant Submissions</p>
             <GlowCard glowColor="red" className="!w-full mb-10 h-auto">
                 <div style={{ padding: '30px' }}>
                     <p style={{ color: 'var(--text2)', marginBottom: '20px' }}>View recorded task videos from participants</p>
@@ -637,8 +730,8 @@ export default function AdminPage() {
                                 <div className="video-station-badge">STATION {task.station_id}</div>
                                 <video src={task.video_url} controls playsInline />
                                 <div className="video-info">
-                                    <span>🕒 {new Date(task.created_at).toLocaleString()}</span>
-                                    <span>👤 {task.session_id?.substring(0, 8)}...</span>
+                                    <span>{new Date(task.created_at).toLocaleString()}</span>
+                                    <span>{task.session_id?.substring(0, 8)}...</span>
                                 </div>
                             </div>
                         ))}

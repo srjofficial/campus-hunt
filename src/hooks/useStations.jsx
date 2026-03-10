@@ -27,7 +27,8 @@ export function StationProvider({ children }) {
                 correctIndex: s.correct_index,
                 secretLetter: s.secret_letter,
                 nextClue: s.next_clue,
-                funTask: s.fun_task
+                funTask: s.fun_task,
+                imageUrl: s.image_url || null
             }));
             
             setStations(formatted);
